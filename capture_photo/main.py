@@ -10,6 +10,7 @@ while(1):
     ret,picture = cap.read()
     reSize = cv2.resize(picture, (2560//2,720//2), interpolation=cv2.INTER_CUBIC)
     cv2.imshow('capture photo',reSize)
+#     cv2.imshow('capture photo',picture)
     k = cv2.waitKey(10)
     if k == ord('s'):
         Photocut.save_img(picture)
