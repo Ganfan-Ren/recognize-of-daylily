@@ -107,7 +107,7 @@ class Roiselect():
 
     def get_boximage(self,*args):
         '''
-        :param args: img,anchor or threhold or 
+        :param args: img,anchor or threhold or
         :return:img
         '''
         if len(args) == 1:
