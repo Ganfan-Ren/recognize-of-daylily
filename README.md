@@ -1,9 +1,10 @@
-# Neural-Network
-It's my own repository about recognize of daylily
-黄花菜识别数据库
+# Daylily detect
+进行黄花菜的位置检测的神经网络
 
-This folder（capture_photo） is used to capture pictures for binocular cameras
+![img.png](image/img.png)
 
-This folder （datasets）holds the marked dataset of daylily
-
-This folder（image processing）is used to save image processing programs
+# 训练网络
+1. 设置 config 文件夹下的路径文件 path.yaml
+2. 设置网络训练参数 config/config.yaml
+3. 修改 utils/dataset.py 的 Dataloader 以适应自己的数据集
+4. 运行 train.py

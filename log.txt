@@ -1,0 +1,19 @@
+2022-11-16 11:06:46,368 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:07:39,970 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:12:41,363 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:13:04,586 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:21:38,914 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:22:25,532 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:25:33,840 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:28:21,672 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 11:30:50,092 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:07:58,373 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:09:10,602 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:09:39,250 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:09:46,053 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:10:39,957 - train.py[line:97] - INFO: 开始训练：weight/..pt
+2022-11-16 15:10:42,579 - train.py[line:69] - INFO: 0 损失函数为：2.5586185455322266
+2022-11-16 15:10:48,769 - train.py[line:69] - INFO: 0 损失函数为：2.543297290802002
+2022-11-16 15:10:54,893 - train.py[line:69] - INFO: 0 损失函数为：2.5359904766082764
+2022-11-16 15:11:00,903 - train.py[line:69] - INFO: 0 损失函数为：2.531696319580078
+2022-11-16 15:11:06,755 - train.py[line:69] - INFO: 0 损失函数为：2.5299806594848633
