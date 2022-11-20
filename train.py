@@ -1,13 +1,12 @@
 import yaml
 import os
 import logging
-from model.loss import Loss,Focal_Loss
-from utils import Dataloader_1
+from utils import Dataloader
 import torch
 import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
-from model import SegNet,Loss
+from model import DayHeap,Loss
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -50,7 +49,7 @@ def train(net,device_,config):
     elif config['schedual'] == 'StepLR':
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer,1,gamma=0.5)
     # 数据加载器
-    loader = Dataloader_1('config/config.yaml')
+    loader = Dataloader('config/config.yaml')
     # 损失计算函数
     criterial = Loss().to(device)
     # 验证精度初始化
@@ -90,7 +89,7 @@ def train(net,device_,config):
 
 
 def main():
-    model = SegNet(2)
+    model = DayHeap()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config_path = 'config/config.yaml'
     with open(config_path,'r') as f:

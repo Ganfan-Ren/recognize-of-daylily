@@ -106,9 +106,6 @@ class DetectHead(nn.Module):
         angle_length[:,3:,:,:] = self.sigmoid2(angle_length[:,3:,:,:])
         return [obj,cla,angle_length,center]
 
-
-
-
 class DayHeap(nn.Module):
     def __init__(self):
         super(DayHeap, self).__init__()

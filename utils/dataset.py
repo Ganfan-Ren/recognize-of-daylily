@@ -76,14 +76,95 @@ class Dataloader(Datapath):
         )
 
     def __getitem__(self, item):
-        pass
+        calangle = lambda x: -np.arctan((x[1][1] - x[0][1]) / (x[1][0] - x[0][0])) if x[0][0] != x[1][0] else np.pi / 2
+        callength = lambda x: np.sqrt((x[1][1] - x[0][1])**2 + (x[1][0] - x[0][0])**2)
+        l_cut = self.config['length']
+        pathlist = self.getcurrentpath(item)
+        y11, y12, y13, y14 = [], [], [], []
+        y21, y22, y23, y24 = [], [], [], []
+        heapmap = []
+        for i,path in enumerate(pathlist):
+            img = self.getimage(pathlist,i)
+            keypoints = self.getlabel(pathlist,i)
+            n_img,n_keypoints = self.enhenced(img,keypoints)
+            y11_np,y12_np,y13_np,y14_np=np.zeros([20,30]),np.zeros([20,30,3]),np.zeros([20,30,6]),np.zeros([20,30,2])
+            y21_np, y22_np, y23_np, y24_np = np.zeros([40, 60]),np.zeros([40, 60,3]),np.zeros([40, 60,6]),np.zeros([40, 60,2])
+            heapmap_np = np.zeros([160,240,5])
+            for j,obj_kps in enumerate(n_keypoints):
+                long = callength([obj_kps[1],obj_kps[2]])
+                if long>l_cut:
+                    x_ind,y_ind = int(obj_kps[1][1] / self.h * 20),int(obj_kps[1][0] / self.w * 30)
+                    # 长度
+                    lrelated0 = self.limit(long / (self.config['long_class'][1]),0.5,2)
+                    lrelated1 = self.limit(callength([obj_kps[0],obj_kps[1]]) / long,0.5,2)
+                    lrelated2 = self.limit(callength([obj_kps[2], obj_kps[3]]) / long,0.5,2)
+                    # 中心点
+                    x_related = (obj_kps[1][1] - int(x_ind * 16)) / 16
+                    y_related = (obj_kps[1][0] - int(y_ind * 16)) / 16
+                    # 角度
+                    angle = calangle([obj_kps[1],obj_kps[2]])
+                    ang = self.config['angle']
+                    ang_c = np.argmin(np.abs(np.array([angle-ang[0],angle-ang[1],angle-ang[2]])))
+                    angrelated0 = angle / ang[ang_c]
+                    angrelated1 = self.limit(calangle([obj_kps[0], obj_kps[1]]) / angle,0.5,1.5)
+                    angrelated2 = self.limit(calangle([obj_kps[2], obj_kps[3]]) / angle,0.5,1.5)
+                    y11_np[x_ind,y_ind] = 1
+                    y12_np[x_ind,y_ind,ang_c] = 1
+                    y13_np[x_ind,y_ind] = [lrelated0,lrelated1,lrelated2,angrelated0,angrelated1,angrelated2]
+                    y14_np[x_ind,y_ind] = [x_related,y_related]
+
+                else:
+                    x_ind, y_ind = int(obj_kps[1][1] / self.h * 40), int(obj_kps[1][0] / self.w * 60)
+                    # 长度
+                    lrelated0 = self.limit(long / (self.config['long_class'][0]), 0.5, 2)
+                    lrelated1 = self.limit(callength([obj_kps[0], obj_kps[1]]) / long, 0.5, 2)
+                    lrelated2 = self.limit(callength([obj_kps[2], obj_kps[3]]) / long, 0.5, 2)
+                    # 中心点
+                    x_related = (obj_kps[1][1] - int(x_ind * 8)) / 8
+                    y_related = (obj_kps[1][0] - int(y_ind * 8)) / 8
+                    # 角度
+                    angle = calangle([obj_kps[1], obj_kps[2]])
+                    ang = self.config['angle']
+                    ang_c = np.argmin(np.abs(np.array([angle - ang[0], angle - ang[1], angle - ang[2]])))
+                    angrelated0 = angle / ang[ang_c]
+                    angrelated1 = self.limit(calangle([obj_kps[0], obj_kps[1]]) / angle, 0.5, 1.5)
+                    angrelated2 = self.limit(calangle([obj_kps[2], obj_kps[3]]) / angle, 0.5, 1.5)
+                    y21_np[x_ind, y_ind] = 1
+                    y22_np[x_ind, y_ind, ang_c] = 1
+                    y23_np[x_ind, y_ind] = [lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2]
+                    y24_np[x_ind, y_ind] = [x_related, y_related]
+                for k,point in enumerate(obj_kps):
+                    heapmap_np[int(point[1]/2)-2:int(point[1]/2)+3,int(point[0]/2)-2:int(point[0]/2)+3,k+1]=1
+            y11_tensor = torch.from_numpy(y11_np).unsqueeze(0).unsqueeze(0)
+            y12_tensor, y13_tensor, y14_tensor = torch.from_numpy(y12_np.transpose([2, 0, 1])).unsqueeze(0), \
+                                                 torch.from_numpy(y13_np.transpose([2, 0, 1])).unsqueeze(0), \
+                                                 torch.from_numpy(y14_np.transpose([2, 0, 1])).unsqueeze(0)
+            y11.append(y11_tensor)
+            y12.append(y12_tensor)
+            y13.append(y13_tensor)
+            y14.append(y14_tensor)
+            y21_tensor = torch.from_numpy(y21_np).unsqueeze(0).unsqueeze(0)
+            y22_tensor, y23_tensor, y24_tensor = torch.from_numpy(y22_np.transpose([2, 0, 1])).unsqueeze(0), \
+                                                 torch.from_numpy(y23_np.transpose([2, 0, 1])).unsqueeze(0), \
+                                                 torch.from_numpy(y24_np.transpose([2, 0, 1])).unsqueeze(0)
+            y21.append(y21_tensor)
+            y22.append(y22_tensor)
+            y23.append(y23_tensor)
+            y24.append(y24_tensor)
+            heapmap_dim0 = 1 - np.sum(heapmap_np,2)
+            heapmap_np[:,:,0] = np.where(heapmap_dim0<0,0,1) * heapmap_dim0
+            heapmap_np = cv2.GaussianBlur(heapmap_tensor,(3,3),15)
+            heapmap_tensor = torch.from_numpy(heapmap_np.transpose([2,0,1])).unsqueeze(0)
+            heapmap.append(heapmap_tensor)
+        y1 = [torch.cat(y11,0),torch.cat(y12,0),torch.cat(y13,0),torch.cat(y14,0)]
+        y2 = [torch.cat(y21,0),torch.cat(y22,0),torch.cat(y23,0),torch.cat(y24,0)]
+        heapmap = torch.cat(heapmap,0)
+        return y1,y2,heapmap
+
+    def __len__(self):
+        return len(self.filelist) // self.batch_size + 1
 
     def getimage(self,plist,item): # plist[item]
-        # img = cv2.imread(plist[item])
-        # h, w = self.config['size_img'][0], self.config['size_img'][1]
-        # img = cv2.resize(img, [w, h])
-        # return img
-        #----------------svm_read---------------
         img = cv2.imread(plist[item])
         self.h,self.w = self.config['size_img'][0],self.config['size_img'][1]
         img = cv2.resize(img,[self.h,self.w],interpolation=cv2.INTER_NEAREST)
@@ -95,49 +176,91 @@ class Dataloader(Datapath):
         label = file.getpointfloat()
         label[:,0] = np.int_(label[:,0]*self.w)
         label[:, 1] = np.int_(label[:, 1] * self.h)
-        return label
+        keypoints = []
+        for k, v in label.items():
+            keypoint = []
+            for j, p in enumerate(v):
+                x = int(p[0] * 480)
+                y = int(p[1] * 320)
+                keypoint.append((x, y))
+            keypoints.append(keypoint)
+        return keypoints
 
-
-    def enhenced(self,image,label):
-        random.seed(time.time())
-        transformed = self.transform(image=image, keypoints=label)
+    def enhenced(self,image,keypoints):
+        t = time.time()
+        new_kps = []
+        for keypoint in keypoints:
+            random.seed(t)
+            transformed = self.transform(image=image,keypoints=keypoint)
+            if len(transformed['keypoints']) == 4:
+                new_kps.append(transformed['keypoints'])
         image_medium = transformed['image']
-        mask_medium = transformed['keypoints']
-        return image_medium, mask_medium
+        label_medium = new_kps
+        return image_medium, label_medium
+
+    def limit(self,x,min,max):
+        if x<min:
+            return min
+        elif x>max:
+            return max
+        else:
+            return x
 
 if __name__ == '__main__':
-    file = File()
-    file.read(r'F:\daylily_w\dataset\label_point\IMGdaylily_00000.txt')
-    label = file.getpointint()
-    keypoint = []
-    for k,v in label.items():
-        for j,p in enumerate(v):
-            # x = int(p[0] * 320)
-            # y = int(p[1] * 480)
-            x = p[0]
-            y = p[1]
-            keypoint.append((x,y))
-    transform = A.Compose([
-        A.RandomSizedCrop(min_max_height=(256, 320), height=320, width=480, p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.OneOf([
-            A.HueSaturationValue(p=0.5),
-            A.RGBShift(p=0.7)
-        ], p=1),
-        A.RandomBrightnessContrast(p=0.5)
-    ],
-        keypoint_params=A.KeypointParams(format='xy'),
-    )
-    image = cv2.imread('F:\daylily_w\dataset\image\IMGdaylily_00000.jpg')
-    # image = cv2.resize(image,[480,320])
-    KEYPOINT_COLOR = (0, 255, 0)  # Green
+    pass
 
 
-    def vis_keypoints(image, label, color=KEYPOINT_COLOR, diameter=3):
-        image = image.copy()
 
-        for p in keypoint:
-            cv2.circle(image, (int(p[0]), int(p[1])), diameter, (0, 255, 0), -1)
-        cv2.imshow('img',image)
-        cv2.waitKey(0)
-    vis_keypoints(image,label)
+    # ----------------------测试数据增强方法-----------------------
+    # file = File()
+    # file.read(r'F:\daylily_w\dataset\label_point\IMGdaylily_00000.txt')
+    # label = file.getpointfloat()
+    #
+    # send_pipe = {}
+    # image = cv2.imread('F:\daylily_w\dataset\image\IMGdaylily_00000.jpg')
+    # image = cv2.resize(image, [480, 320])
+    # i = 1
+    # keypoints = []
+    # for k, v in label.items():
+    #     keypoint = []
+    #     for j, p in enumerate(v):
+    #         x = int(p[0] * 480)
+    #         y = int(p[1] * 320)
+    #         keypoint.append((x, y))
+    #     keypoints.append(keypoint)
+    #     i+=1
+    #
+    # transform = A.Compose([
+    #     A.RandomSizedCrop(min_max_height=(256, 320), height=320, width=480, p=0.5),
+    #     A.HorizontalFlip(p=0.5),
+    #     A.OneOf([
+    #         A.HueSaturationValue(p=0.5),
+    #         A.RGBShift(p=0.7)
+    #     ], p=1),
+    #     A.RandomBrightnessContrast(p=0.5)
+    # ],
+    #     keypoint_params=A.KeypointParams(format='xy'),
+    # )
+    #
+    #
+    # KEYPOINT_COLOR = (0, 255, 0)  # Green
+    #
+    #
+    # def vis_keypoints(image, keypoints, color=KEYPOINT_COLOR, diameter=3):
+    #     image = image.copy()
+    #
+    #     for obj in keypoints:
+    #         for (x,y) in obj:
+    #             cv2.circle(image, (int(x), int(y)), diameter, (0, 255, 0), -1)
+    #     cv2.imshow('img',image)
+    #     cv2.waitKey(0)
+    # vis_keypoints(image,keypoints)
+    # new_kps = []
+    # t = time.time()
+    # for keypoint in keypoints:
+    #     random.seed(t)
+    #     transformed = transform(image=image,keypoints=keypoint)
+    #     new_kps.append(transformed['keypoints'])
+    # new_img = transformed['image']
+    # print(new_kps)
+    # vis_keypoints(new_img,new_kps)

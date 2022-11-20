@@ -8,3 +8,6 @@ schedual: StepLR
 momentum: 0.9
 size_img: [320,480]
 class_dict: config\class_dict.yaml
+length: 30 # 长度分类边界（2类）
+angle: [0.784,1.57,2.355]
+long_class: [20,40]
