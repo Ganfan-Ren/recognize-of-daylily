@@ -39,24 +39,6 @@ class Datapath():
                     self.filelist.remove(fname)
             if len(self.filelist)==0:
                 raise FileExistsError('check whether file and its parent path is existed')
-    def getcurrentpath(self,item):
-        stop_sign = False
-        ind = item * self.batch_size
-        if ind >= len(self.filelist):
-            stop_sign=True
-            return [],[],stop_sign
-        img_batch = []
-        label_batch = []
-        for i in range(self.batch_size):
-            if ind >= len(self.filelist):
-                ind = 0
-            filename = self.filelist[ind]
-            img_path = '/'.join([self.image_path,filename])
-            label_path = '/'.join([self.label_path, filename])
-            img_batch.append(img_path)
-            label_batch.append(label_path)
-            ind += 1
-        return img_batch,label_batch,stop_sign
 
 class Dataloader(Datapath):
     def __init__(self,configpath=r'config\config.yaml'):
@@ -263,4 +245,4 @@ if __name__ == '__main__':
     #     new_kps.append(transformed['keypoints'])
     # new_img = transformed['image']
     # print(new_kps)
-    # vis_keypoints(new_img,new_kps)
+    # vis_keypoints(new_img,new_k

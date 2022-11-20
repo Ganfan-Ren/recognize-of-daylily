@@ -47,3 +47,4 @@ class Loss(nn.Module):
         for i in range(5):
             loss_total += weights[i] * loss[i]
         return loss_total
+
