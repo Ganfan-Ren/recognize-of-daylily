@@ -3,3 +3,4 @@ weight
 .idea
 test.py
 *.pyc
+.gitignore
