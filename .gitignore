@@ -2,5 +2,5 @@ log.txt
 weight
 .idea
 test.py
-*.pyc
+__pycache__
 .gitignore
