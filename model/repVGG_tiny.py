@@ -23,7 +23,7 @@ class Rep(nn.Module):
         self.conv2 = nn.Sequential(nn.Conv2d(c1,c2,k,s,padding),
                                    nn.BatchNorm2d(c2))
 
-        self.act = nn.ReLU(inplace=True)
+        self.act = nn.ReLU(inplace=False)
     def forward(self,x):
         o1 = self.conv1(x)
         o = o1 + self.conv2(x)
@@ -36,7 +36,7 @@ class Rep_2(nn.Module):
         self.conv1 = nn.Conv2d(c1, c2, k, s, padding * 2, 2)
         self.conv2 = nn.Conv2d(c1, c2, k, s, padding)
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.ReLU(inplace=True)
+        self.act = nn.ReLU(inplace=False)
     def forward(self, x):
         o1 = self.conv1(x)
         o2 = self.conv2(x)
@@ -65,13 +65,13 @@ class SPPF(nn.Module):
         super(SPPF, self).__init__()
         self.conv = nn.Sequential(nn.Conv2d(channel,channel,3,1,1),
                                   nn.BatchNorm2d(channel),
-                                  nn.ReLU(inplace=True))
+                                  nn.ReLU(inplace=False))
         self.maxpool1 = nn.MaxPool2d(3,1,1)
         self.maxpool2 = nn.MaxPool2d(5,1,2)
         self.maxpool3 = nn.MaxPool2d(7,1,3)
         self.conv2 = nn.Sequential(nn.Conv2d(4 * channel,channel,3,1,1),
                                   nn.BatchNorm2d(channel),
-                                  nn.ReLU(inplace=True))
+                                  nn.ReLU(inplace=False))
     def forward(self,x):
         o1 = self.conv(x)
         o2 = self.maxpool1(x)
@@ -85,7 +85,7 @@ class Conv(nn.Module):
         super(Conv, self).__init__()
         self.conv = nn.Sequential(nn.Conv2d(c1,c2,k,s,p),
                                   nn.BatchNorm2d(c2),
-                                  nn.ReLU(inplace=True))
+                                  nn.ReLU(inplace=False))
     def forward(self,x):
         o = self.conv(x)
         return o

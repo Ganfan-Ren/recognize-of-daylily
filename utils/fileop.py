@@ -64,7 +64,7 @@ class File():
         for i, info in enumerate(self.dict):
             obj = info.reshape(-1, 2)
             obj[:,0] = obj[:,0] * self.imageh / self.imagew
-            obj[:, 1] = obj[:, 1] * self.imagew / self.imageh
+            obj[:,1] = obj[:,1] * self.imagew / self.imageh
             a[self.index[i]] = obj
         return a
 

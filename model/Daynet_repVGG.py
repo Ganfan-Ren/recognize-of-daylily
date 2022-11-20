@@ -102,9 +102,12 @@ class DetectHead(nn.Module):
         cla = self.softmax(self.c2(x))
         angle_length = self.c3(x)
         center = self.sigmoid(self.c4(x))
-        angle_length[:,:3,:,:] = self.sigmoid1(angle_length[:,:3,:,:])
-        angle_length[:,3:,:,:] = self.sigmoid2(angle_length[:,3:,:,:])
-        return [obj,cla,angle_length,center]
+        length = angle_length[:,:3,:,:].clone()
+        angle = angle_length[:,3:,:,:].clone()
+        res_al = torch.zeros_like(angle_length)
+        res_al[:,:3,:,:] = self.sigmoid1(length)
+        res_al[:,3:,:,:] = self.sigmoid2(angle)
+        return [obj,cla,res_al,center]
 
 class DayHeap(nn.Module):
     def __init__(self):

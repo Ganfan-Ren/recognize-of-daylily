@@ -62,15 +62,15 @@ def train(net,device_,config):
         print('\nstep: ',step,'/',config['epoch']-1)
         # 设置进度条
         bar = tqdm(loader)
-        for id,(x,mask,label) in enumerate(bar):
+        for i,(x,label) in enumerate(bar):
             x = x.to(device)
-            det_mask,det_label = net(x)                      # 网络正向传播
-            loss = criterial(det_mask,det_label,mask,label)      # 计算损失函数
+            det_label = net(x)                      # 网络正向传播
+            loss = criterial(det_label,label)      # 计算损失函数
             logger.info(str(step)+' 损失函数为：'+str(float(loss)))
             optimizer.zero_grad()             # 梯度信息归零
             loss.backward()                   # 反向传播求导
             optimizer.step()                  # 更新权重
-            bar.set_postfix({'loss': '{0:1.5f}'.format(float(loss)),'progress':str(loader.n/len(loader.filelist)*100)})
+            bar.set_postfix({'loss': '{0:1.5f}'.format(float(loss))})
             bar.update(1)
             loss_ += float(loss)              # 损失叠加，用于计算该step的平均损失
             st += 1

@@ -40,6 +40,29 @@ class Datapath():
             if len(self.filelist)==0:
                 raise FileExistsError('check whether file and its parent path is existed')
 
+    def getcurrentpath(self, item):
+        stop_sign = False
+        ind = item * self.batch_size
+        if ind >= len(self.filelist):
+            stop_sign = True
+            return [], [], stop_sign
+        img_batch = []
+        label_batch = []
+        for i in range(self.batch_size):
+            if ind >= len(self.filelist):
+                ind = 0
+            filename = self.filelist[ind]
+            name = filename.split('.')[0]
+            imgname = name+'.jpg' if os.path.exists('/'.join([self.image_path, name+'.jpg'])) else name+'.png'
+            img_path = '/'.join([self.image_path, imgname])
+            if not os.path.exists(img_path):
+                raise UserWarning(img_path+' not found')
+            label_path = '/'.join([self.label_path, filename])
+            img_batch.append(img_path)
+            label_batch.append(label_path)
+            ind += 1
+        return img_batch, label_batch, stop_sign
+
 class Dataloader(Datapath):
     def __init__(self,configpath=r'config\config.yaml'):
         super(Dataloader, self).__init__(configpath)
@@ -61,14 +84,18 @@ class Dataloader(Datapath):
         calangle = lambda x: -np.arctan((x[1][1] - x[0][1]) / (x[1][0] - x[0][0])) if x[0][0] != x[1][0] else np.pi / 2
         callength = lambda x: np.sqrt((x[1][1] - x[0][1])**2 + (x[1][0] - x[0][0])**2)
         l_cut = self.config['length']
-        pathlist = self.getcurrentpath(item)
+        imgpathlist,labelpathlist,stopsign = self.getcurrentpath(item)
+        if stopsign:
+            raise StopIteration
         y11, y12, y13, y14 = [], [], [], []
         y21, y22, y23, y24 = [], [], [], []
         heapmap = []
-        for i,path in enumerate(pathlist):
-            img = self.getimage(pathlist,i)
-            keypoints = self.getlabel(pathlist,i)
+        img_input = []
+        for i,path in enumerate(imgpathlist):
+            img = self.getimage(imgpathlist,i)
+            keypoints = self.getlabel(labelpathlist,i)
             n_img,n_keypoints = self.enhenced(img,keypoints)
+            img_input.append(torch.from_numpy(img.transpose([2,0,1])).unsqueeze(0))
             y11_np,y12_np,y13_np,y14_np=np.zeros([20,30]),np.zeros([20,30,3]),np.zeros([20,30,6]),np.zeros([20,30,2])
             y21_np, y22_np, y23_np, y24_np = np.zeros([40, 60]),np.zeros([40, 60,3]),np.zeros([40, 60,6]),np.zeros([40, 60,2])
             heapmap_np = np.zeros([160,240,5])
@@ -116,32 +143,33 @@ class Dataloader(Datapath):
                     y23_np[x_ind, y_ind] = [lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2]
                     y24_np[x_ind, y_ind] = [x_related, y_related]
                 for k,point in enumerate(obj_kps):
-                    heapmap_np[int(point[1]/2)-2:int(point[1]/2)+3,int(point[0]/2)-2:int(point[0]/2)+3,k+1]=1
+                    heapmap_np[int(point[1]/2)-1:int(point[1]/2)+2,int(point[0]/2)-1:int(point[0]/2)+2,k+1]=1
             y11_tensor = torch.from_numpy(y11_np).unsqueeze(0).unsqueeze(0)
             y12_tensor, y13_tensor, y14_tensor = torch.from_numpy(y12_np.transpose([2, 0, 1])).unsqueeze(0), \
                                                  torch.from_numpy(y13_np.transpose([2, 0, 1])).unsqueeze(0), \
                                                  torch.from_numpy(y14_np.transpose([2, 0, 1])).unsqueeze(0)
-            y11.append(y11_tensor)
-            y12.append(y12_tensor)
-            y13.append(y13_tensor)
-            y14.append(y14_tensor)
+            y11.append(y11_tensor.to(torch.float))
+            y12.append(y12_tensor.to(torch.float))
+            y13.append(y13_tensor.to(torch.float))
+            y14.append(y14_tensor.to(torch.float))
             y21_tensor = torch.from_numpy(y21_np).unsqueeze(0).unsqueeze(0)
             y22_tensor, y23_tensor, y24_tensor = torch.from_numpy(y22_np.transpose([2, 0, 1])).unsqueeze(0), \
                                                  torch.from_numpy(y23_np.transpose([2, 0, 1])).unsqueeze(0), \
                                                  torch.from_numpy(y24_np.transpose([2, 0, 1])).unsqueeze(0)
-            y21.append(y21_tensor)
-            y22.append(y22_tensor)
-            y23.append(y23_tensor)
-            y24.append(y24_tensor)
+            y21.append(y21_tensor.to(torch.float))
+            y22.append(y22_tensor.to(torch.float))
+            y23.append(y23_tensor.to(torch.float))
+            y24.append(y24_tensor.to(torch.float))
             heapmap_dim0 = 1 - np.sum(heapmap_np,2)
             heapmap_np[:,:,0] = np.where(heapmap_dim0<0,0,1) * heapmap_dim0
-            heapmap_np = cv2.GaussianBlur(heapmap_tensor,(3,3),15)
+            # heapmap_np = cv2.GaussianBlur(heapmap_np,(3,3),15)
             heapmap_tensor = torch.from_numpy(heapmap_np.transpose([2,0,1])).unsqueeze(0)
             heapmap.append(heapmap_tensor)
-        y1 = [torch.cat(y11,0),torch.cat(y12,0),torch.cat(y13,0),torch.cat(y14,0)]
-        y2 = [torch.cat(y21,0),torch.cat(y22,0),torch.cat(y23,0),torch.cat(y24,0)]
+        x = torch.cat(img_input,0).to(torch.float)
+        y1 = [torch.cat(y21,0),torch.cat(y22,0),torch.cat(y23,0),torch.cat(y24,0)]
+        y2 = [torch.cat(y11,0),torch.cat(y12,0),torch.cat(y13,0),torch.cat(y14,0)]
         heapmap = torch.cat(heapmap,0)
-        return y1,y2,heapmap
+        return x,(y1,y2,heapmap)
 
     def __len__(self):
         return len(self.filelist) // self.batch_size + 1
@@ -149,21 +177,19 @@ class Dataloader(Datapath):
     def getimage(self,plist,item): # plist[item]
         img = cv2.imread(plist[item])
         self.h,self.w = self.config['size_img'][0],self.config['size_img'][1]
-        img = cv2.resize(img,[self.h,self.w],interpolation=cv2.INTER_NEAREST)
+        img = cv2.resize(img,[self.w,self.h],interpolation=cv2.INTER_NEAREST)
         return img
 
     def getlabel(self,plist,item): # plist[item]
         file = File()
         file.read(plist[item])
         label = file.getpointfloat()
-        label[:,0] = np.int_(label[:,0]*self.w)
-        label[:, 1] = np.int_(label[:, 1] * self.h)
         keypoints = []
         for k, v in label.items():
             keypoint = []
             for j, p in enumerate(v):
-                x = int(p[0] * 480)
-                y = int(p[1] * 320)
+                x = self.limit(int(p[0] * self.w),0,479)
+                y = self.limit(int(p[1] * self.h),0,319)
                 keypoint.append((x, y))
             keypoints.append(keypoint)
         return keypoints
@@ -195,11 +221,11 @@ if __name__ == '__main__':
 
     # ----------------------测试数据增强方法-----------------------
     # file = File()
-    # file.read(r'F:\daylily_w\dataset\label_point\IMGdaylily_00000.txt')
+    # file.read(r'F:\daylily_w\dataset\label_point\IMGdaylily_00001.txt')
     # label = file.getpointfloat()
     #
     # send_pipe = {}
-    # image = cv2.imread('F:\daylily_w\dataset\image\IMGdaylily_00000.jpg')
+    # image = cv2.imread('F:\daylily_w\dataset\image\IMGdaylily_00001.jpg')
     # image = cv2.resize(image, [480, 320])
     # i = 1
     # keypoints = []
@@ -245,4 +271,4 @@ if __name__ == '__main__':
     #     new_kps.append(transformed['keypoints'])
     # new_img = transformed['image']
     # print(new_kps)
-    # vis_keypoints(new_img,new_k
+    # vis_keypoints(new_img,new_kps)

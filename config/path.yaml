@@ -1,4 +1,4 @@
-train_path: D:\dataset_sweet\image
-train_label: D:\dataset_sweet\labels
+train_path: F:\daylily_w\dataset\image
+train_label: F:\daylily_w\dataset\label_point
 val_path:
 val_label:

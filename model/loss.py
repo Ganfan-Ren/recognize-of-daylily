@@ -36,15 +36,16 @@ class Loss(nn.Module):
         for i,tensor in enumerate(l1):
             l1[i] = tensor.to(device)
             l2[i] = l2[i].to(device)
+
         confidobj_loss = self.bce(y1[0],l1[0]) + self.bce(y2[0],l2[0])
         cls_loss = self.focal_loss(y1[1]*l1[0],l1[1]) + self.focal_loss(y2[1]*l2[0],l2[1])
-        angleandlength_loss = self.mse(y1[2]*l1[0],l1[2]) + self.mse(y2[2]*l2[0],l2[2])
-        center_loss = self.mse(y1[3]*l1[0],l1[3]) + self.mse(y2[3]*l2[0],l2[3])
+        angleandlength_loss = self.mse(y1[2] * l1[0],l1[2]) + self.mse(y2[2]* l2[0],l2[2])
+        center_loss = self.mse(y1[3] * l1[0],l1[3]) + self.mse(y2[3] * l2[0],l2[3])
         heap_loss = self.focal_loss(y3,l3)
         loss = [confidobj_loss,cls_loss,angleandlength_loss,center_loss,heap_loss]
         weights = [1,1,1,1,1]
         loss_total = torch.Tensor([0]).to(device)
         for i in range(5):
-            loss_total += weights[i] * loss[i]
+            loss_total = loss_total + weights[i] * loss[i]
         return loss_total
 
