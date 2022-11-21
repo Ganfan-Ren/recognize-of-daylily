@@ -11,3 +11,6 @@ class_dict: config\class_dict.yaml
 length: 30
 angle: [0.784,1.57,2.355]
 long_class: [20,40]
+T: 0.5
+epsilon: 0.9
+SOA: 0.5
