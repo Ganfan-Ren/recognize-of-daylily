@@ -82,7 +82,7 @@ def main():
     net = DayHeap()
     with open('config/config.yaml','r') as f:
         config = yaml.load(f,yaml.FullLoader)
-    imgpath = r'F:\daylily_w\dataset\image\IMGdaylily_03274.jpg'
+    imgpath = r'D:\dataset\image\IMGdaylily_00000.jpg'
     img = cv2.imread(imgpath)
     t = torch.load(config['weight_path'])
     net.load_state_dict(t)
