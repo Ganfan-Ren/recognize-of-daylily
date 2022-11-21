@@ -1,4 +1,4 @@
-batch_size: 4
+batch_size: 1
 path: config\path.yaml
 weight_path: weight/Dheap_weight.pt
 lr: 0.001

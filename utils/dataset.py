@@ -101,6 +101,7 @@ class Dataloader(Datapath):
             heapmap_np = np.zeros([160,240,5])
             for j,obj_kps in enumerate(n_keypoints):
                 long = callength([obj_kps[1],obj_kps[2]])
+                print(obj_kps)
                 if long>l_cut:
                     x_ind,y_ind = int(obj_kps[1][1] / self.h * 20),int(obj_kps[1][0] / self.w * 30)
                     # 长度
@@ -121,6 +122,7 @@ class Dataloader(Datapath):
                     y12_np[x_ind,y_ind,ang_c] = 1
                     y13_np[x_ind,y_ind] = [lrelated0,lrelated1,lrelated2,angrelated0,angrelated1,angrelated2]
                     y14_np[x_ind,y_ind] = [x_related,y_related]
+                    print(x_ind,y_ind,ang_c,x_related, y_related,lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
 
                 else:
                     x_ind, y_ind = int(obj_kps[1][1] / self.h * 40), int(obj_kps[1][0] / self.w * 60)
@@ -142,6 +144,7 @@ class Dataloader(Datapath):
                     y22_np[x_ind, y_ind, ang_c] = 1
                     y23_np[x_ind, y_ind] = [lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2]
                     y24_np[x_ind, y_ind] = [x_related, y_related]
+                    print(x_ind,y_ind,ang_c,x_related, y_related,lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
                 for k,point in enumerate(obj_kps):
                     heapmap_np[int(point[1]/2)-1:int(point[1]/2)+2,int(point[0]/2)-1:int(point[0]/2)+2,k+1]=1
             y11_tensor = torch.from_numpy(y11_np).unsqueeze(0).unsqueeze(0)

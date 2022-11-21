@@ -3,7 +3,7 @@ import cv2
 import yaml
 import numpy as np
 from model import DayHeap
-from utils import Detres
+from utils import Detres,Dataloader
 
 def detect(net,img,config,threshold):
     size = config['size_img']
@@ -89,5 +89,23 @@ def main():
     res = detect(net,img,config,0.3)
     print(res)
 
+def testmain():
+    loader = Dataloader()
+    x,y = loader[0]
+    img = x.squeeze().numpy().transpose([1,2,0]) / 255
+    res_al = tensor_objabsvalue(y, loader.config)  # al are angle and length
+    detecter = Detres(res_al, loader.config, 0.3)
+    keypoint = detecter.getkeypoint()
+    KEYPOINT_COLOR = (0, 255, 0)  # Green
+    def vis_keypoints(image, keypoints, color=KEYPOINT_COLOR, diameter=3):
+        image = image.copy()
+
+        for obj in keypoints:
+            for (x,y) in obj:
+                cv2.circle(image, (int(x), int(y)), diameter, (0, 255, 0), -1)
+        cv2.imshow('img',image)
+        cv2.waitKey(0)
+    vis_keypoints(img,keypoint)
+
 if __name__ == '__main__':
-    main()
+    testmain()
