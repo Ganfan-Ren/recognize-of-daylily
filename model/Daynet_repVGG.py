@@ -95,7 +95,7 @@ class DetectHead(nn.Module):
         self.softmax = nn.Softmax(1)
         self.sigmoid = nn.Sigmoid()
         self.sigmoid1 = Sigmoid_al(1.5,0.5)
-        self.sigmoid2 = Sigmoid_al(1,0.5)
+        self.sigmoid2 = Sigmoid_al(1.57,-0.785)
 
     def forward(self,x):
         obj = self.sigmoid(self.c1(x))
