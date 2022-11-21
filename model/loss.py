@@ -43,7 +43,7 @@ class Loss(nn.Module):
         center_loss = self.mse(y1[3] * l1[0],l1[3]) + self.mse(y2[3] * l2[0],l2[3])
         heap_loss = self.focal_loss(y3,l3)
         loss = [confidobj_loss,cls_loss,angleandlength_loss,center_loss,heap_loss]
-        weights = [1,1,1,1,1]
+        weights = [0.01,0.5,0.4,0.5,0.05]
         loss_total = torch.Tensor([0]).to(device)
         for i in range(5):
             loss_total = loss_total + weights[i] * loss[i]
