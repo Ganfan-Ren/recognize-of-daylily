@@ -135,7 +135,7 @@ class Dataloader(Datapath):
                     angle = calangle([obj_kps[1], obj_kps[2]])
                     ang = self.config['angle']
                     ang_c = np.argmin(np.abs(np.array([angle - ang[0], angle - ang[1], angle - ang[2]])))
-                    angrelated0 = angle / ang[ang_c]
+                    angrelated0 = self.limit(angle / ang[ang_c],0.5,1.5)
                     angrelated1 = self.limit(calangle([obj_kps[0], obj_kps[1]]) / angle, 0.5, 1.5)
                     angrelated2 = self.limit(calangle([obj_kps[2], obj_kps[3]]) / angle, 0.5, 1.5)
                     y21_np[x_ind, y_ind] = 1
