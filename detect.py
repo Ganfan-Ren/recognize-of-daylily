@@ -6,6 +6,7 @@ from model import DayHeap
 from utils import Detres,Dataloader
 
 def detect(net,img,config,threshold):
+    img_size = img.shape
     size = config['size_img']
     img = cv2.resize(img,[size[1],size[0]])
     inp = torch.from_numpy(img.transpose([2,0,1])).unsqueeze(0).type(torch.float)
@@ -13,6 +14,12 @@ def detect(net,img,config,threshold):
     res_al = tensor_objabsvalue(det,config) # al are angle and length
     detecter = Detres(res_al,config,threshold)
     keypoint = detecter.getkeypoint()
+    keypoint = np.array(keypoint)
+    if len(keypoint) == 0:
+        return keypoint
+    keypoint[:, :, 0] = keypoint[:, :, 0] / size[1] * img_size[1]
+    keypoint[:, :, 1] = keypoint[:, :, 1] / size[0] * img_size[0]
+    keypoint = np.int_(keypoint)
     return keypoint
 
 def tensor_objabsvalue(det,config): # 将输出转换为[2400+600,9]
@@ -46,7 +53,7 @@ def tensor_objabsvalue(det,config): # 将输出转换为[2400+600,9]
     xy_tensor = torch.cat(
         [height / size[0] * (x_forcal + y1[3][:, 0, :, :]), width / size[1] * (y_forcal + y1[3][:, 1, :, :])], 1)
     xy_tensor = xy_tensor.transpose(1, 3).transpose(1,2).contiguous().view(-1, 2) # [2400,2]
-    y1_res = torch.cat([obj_conf,xy_tensor,angle0.view(-1,1),angle1.view(-1,1),angle2.view(-1,1),length0.view(-1,1),length1.view(-1,1),length2.view(-1,1)],1)
+    y1_res = torch.cat([obj_conf,xy_tensor,angle0.view(-1,1),angle1.view(-1,1),angle2.view(-1,1),length0.view(-1,1),length1.view(-1,1),length2.view(-1,1),cls_index],1)
 
     # --------------针对y2的计算------------
     size = y2[0].squeeze().shape  # [20,30] or [40,60]
@@ -73,10 +80,24 @@ def tensor_objabsvalue(det,config): # 将输出转换为[2400+600,9]
     xy_tensor = torch.cat(
         [height / size[0] * (x_forcal + y2[3][:, 0, :, :]), width / size[1] * (y_forcal + y2[3][:, 1, :, :])], 1)
     xy_tensor = xy_tensor.transpose(1, 3).transpose(1,2).contiguous().view(-1, 2)  # [600,2]
-    y2_res = torch.cat([obj_conf, xy_tensor, angle0.view(-1,1), angle1.view(-1,1), angle2.view(-1,1), length0.view(-1,1), length1.view(-1,1), length2.view(-1,1)], 1)
+    y2_res = torch.cat([obj_conf, xy_tensor, angle0.view(-1,1), angle1.view(-1,1), angle2.view(-1,1), length0.view(-1,1), length1.view(-1,1), length2.view(-1,1),cls_index], 1)
     y = torch.cat([y1_res,y2_res],0)
+    index = torch.linspace(0,y.shape[0]-1,y.shape[0]).view(-1,1)
+    y = torch.cat([y,index],1)
     return y,heapmap
 
+def vis_keypoints(image, keypoints, color, diameter=3):
+    image = image.copy()
+    for obj in keypoints:
+        lastpoint = ()
+        for i, (x, y) in enumerate(obj):
+            cv2.circle(image, (int(x), int(y)), diameter, color[i], -1)
+            if len(lastpoint) > 0:
+                cv2.line(image,lastpoint,(x,y),(0,0,255),diameter)
+            lastpoint = (x,y)
+    image = cv2.resize(image, [960, 640])
+    cv2.imshow('img', image)
+    cv2.waitKey(0)
 
 def main():
     net = DayHeap()
@@ -87,7 +108,21 @@ def main():
     t = torch.load(config['weight_path'])
     net.load_state_dict(t)
     res = detect(net,img,config,0.3)
+    KEYPOINT_COLOR = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]  # B G R
     print(res)
+    vis_keypoints(img,res,KEYPOINT_COLOR,9)
+
+
+def testmain():
+    loader = Dataloader()
+    loader.batch_size = 1
+    x,y = loader[0]
+    img = x.squeeze().numpy().transpose([1,2,0]) / 255
+    res_al = tensor_objabsvalue(y, loader.config)  # al are angle and length
+    detecter = Detres(res_al, loader.config, 0.3)
+    keypoint = detecter.getkeypoint()
+    KEYPOINT_COLOR = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]  # B G R
+    vis_keypoints(img,keypoint,KEYPOINT_COLOR,1)
 
 if __name__ == '__main__':
     main()

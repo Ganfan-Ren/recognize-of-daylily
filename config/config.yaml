@@ -1,8 +1,8 @@
-batch_size: 1
+batch_size: 4
 path: config\path.yaml
 weight_path: weight/Dheap_weight.pt
-lr: 0.001
-epoch: 50
+lr: 0.1
+epoch: 500
 optimizer: SGD
 schedual: StepLR
 momentum: 0.9

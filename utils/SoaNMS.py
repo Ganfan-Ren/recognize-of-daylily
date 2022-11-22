@@ -11,43 +11,35 @@ class Detres(): # detect result
         self.isNMS = False
 
     def NMS(self,SOAthreshold=0.5):
-        res_thre = []
+        res_thre = [torch.zeros([0,11]),torch.zeros([0,11]),torch.zeros([0,11])]
         for i,obj in enumerate(self.res_al):
             if obj[0] >= self.threshold:
-                res_thre.append(obj.unsqueeze(0))
+                res_thre[int(obj[-2])] = torch.cat([res_thre[int(obj[-2])],obj.view(1,11)],0)
                 self.index.append(i)
         # 排序
+        for i,c_resthre in enumerate(res_thre):
+            res_thre[i] = self.Nms(c_resthre,SOAthreshold)
         res_thre = torch.cat(res_thre,0)
-        index = torch.linspace(0,len(res_thre)-1,len(res_thre))
-        i = 0
-        while i < len(res_thre)-1:
-            j = i + 1
-            while j < len(res_thre):
-                if res_thre[i][0] < res_thre[j][0]:
-                    temp = res_thre[i]
-                    res_thre[i] = res_thre[j]
-                    res_thre[j] = temp
-                    temp = index[i].clone()
-                    index[i] = index[j]
-                    index[j] = temp
-                j += 1
-            i += 1
-        self.index = index
-        res_tensor = []
+        self.isNMS = True
+        self.index = res_thre[:,-1]
+        self.res_al = res_thre
+        return res_thre
+
+    def Nms(self,res_thre,SOAthreshold):
+        temp, index = torch.sort(res_thre, 0)
+        for i, ind in enumerate(index[:, 0]):
+            temp[i] = res_thre[ind]
+        res_thre = temp
         i = 0
         while i < len(res_thre)-1:
             j = i+1
             while j < len(res_thre):
                 if self.SOA(res_thre[i],res_thre[j],self.config['T']) > SOAthreshold: # 越大越接近
                     res_thre = torch.cat([res_thre[:j-1,:],res_thre[j:,:]])
-                    self.index.pop(j)
                     continue
                 j += 1
             i += 1
-        self.isNMS = True
-        self.res_al = res_thre
         return res_thre
-
 
     def SOA(self,x1,x2,T=0.5): # [obj_conf, x, y, angle0, angle1, angle2, length0, length1, length2]
         # info=[x,y,angle,length]             O —— ——>x

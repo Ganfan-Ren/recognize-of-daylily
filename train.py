@@ -47,7 +47,7 @@ def train(net,device_,config):
         lf = lambda x: ((1 - np.cos(x * np.pi / config['epoch'])) / 2) * (1e-15 - 1) + 1
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     elif config['schedual'] == 'StepLR':
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer,1,gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer,1,gamma=0.95)
     # 数据加载器
     loader = Dataloader('config/config.yaml')
     # 损失计算函数
@@ -77,11 +77,10 @@ def train(net,device_,config):
             # if st == 40:
             #     optimizer = torch.optim.SGD(net.parameters(), opt['lr'], momentum=opt['momentum'])
         scheduler.step()
-        print('\nloss_average: ',loss_/loader.batch_size)  # 打印平均损失
+        print('\nloss_average: ',loss_/(len(loader)))  # 打印平均损失
         # 保存权重文件
         t = net.state_dict()
         torch.save(t,config['weight_path'])
-
         # 验证集精度
         pass
 

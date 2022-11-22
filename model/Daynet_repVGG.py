@@ -62,8 +62,10 @@ class RVB2_n(nn.Module):
         return self.convdown(y)
 
 class Sigmoid_al(nn.Module):
-    def __init__(self,k,b):
+    def __init__(self,min,max):
         super(Sigmoid_al, self).__init__()
+        k = max-min
+        b = min
         self.k,self.b = k,b
         self.s = nn.Sigmoid()
     def forward(self,x):
@@ -85,17 +87,21 @@ class DetectHead(nn.Module):
     def __init__(self,in_channel):
         super(DetectHead, self).__init__()
         self.c1 = nn.Sequential(CBL_n(in_channel,4),
-                                Conv(in_channel,1,1,1,0))  # obj_
+                                nn.Conv2d(in_channel,1,1,1,0),
+                                nn.BatchNorm2d(1))  # obj_
         self.c2 = nn.Sequential(CBL_n(in_channel, 4),
-                                Conv(in_channel, 3, 1, 1, 0))  # class
+                                nn.Conv2d(in_channel, 3, 1, 1, 0),
+                                nn.BatchNorm2d(3))  # class
         self.c3 = nn.Sequential(CBL_n(in_channel, 4),
-                                Conv(in_channel, 6, 1, 1, 0)) # angel and length
+                                nn.Conv2d(in_channel, 6, 1, 1, 0),
+                                nn.BatchNorm2d(6)) # angel and length
         self.c4 = nn.Sequential(CBL_n(in_channel, 4),
-                                Conv(in_channel, 2, 1, 1, 0)) # related center (x,y)
+                                nn.Conv2d(in_channel, 2, 1, 1, 0),
+                                nn.BatchNorm2d(2)) # related center (x,y)
         self.softmax = nn.Softmax(1)
         self.sigmoid = nn.Sigmoid()
-        self.sigmoid1 = Sigmoid_al(1.5,0.5)
-        self.sigmoid2 = Sigmoid_al(1.57,-0.785)
+        self.sigmoid1 = Sigmoid_al(0.5,2)
+        self.sigmoid2 = Sigmoid_al(-0.785,0.785)
 
     def forward(self,x):
         obj = self.sigmoid(self.c1(x))

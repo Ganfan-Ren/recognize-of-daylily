@@ -81,7 +81,8 @@ class Dataloader(Datapath):
         )
 
     def __getitem__(self, item):
-        calangle = lambda x: -np.arctan((x[1][1] - x[0][1]) / (x[1][0] - x[0][0])) if x[0][0] != x[1][0] else np.pi / 2
+        calangle_ = lambda x: -np.arctan((x[1][1] - x[0][1]) / (x[1][0] - x[0][0])) if x[0][0] != x[1][0] else np.pi / 2
+        calangle = lambda x: x if x > 0 else x + np.pi
         callength = lambda x: np.sqrt((x[1][1] - x[0][1])**2 + (x[1][0] - x[0][0])**2)
         l_cut = self.config['length']
         imgpathlist,labelpathlist,stopsign = self.getcurrentpath(item)
@@ -94,8 +95,7 @@ class Dataloader(Datapath):
         for i,path in enumerate(imgpathlist):
             img = self.getimage(imgpathlist,i)
             keypoints = self.getlabel(labelpathlist,i)
-            # n_img,n_keypoints = self.enhenced(img,keypoints)
-            n_img,n_keypoints = img,keypoints
+            n_img,n_keypoints = self.enhenced(img,keypoints)
             img_input.append(torch.from_numpy(n_img.transpose([2,0,1])).unsqueeze(0))
             y11_np,y12_np,y13_np,y14_np=np.zeros([20,30]),np.zeros([20,30,3]),np.zeros([20,30,6]),np.zeros([20,30,2])
             y21_np, y22_np, y23_np, y24_np = np.zeros([40, 60]),np.zeros([40, 60,3]),np.zeros([40, 60,6]),np.zeros([40, 60,2])
@@ -113,12 +113,12 @@ class Dataloader(Datapath):
                     x_related = (obj_kps[1][1] - int(x_ind * 16)) / 16
                     y_related = (obj_kps[1][0] - int(y_ind * 16)) / 16
                     # 角度
-                    angle = calangle([obj_kps[1],obj_kps[2]])
+                    angle = calangle(calangle_([obj_kps[1],obj_kps[2]]))
                     ang = self.config['angle']
                     ang_c = np.argmin(np.abs(np.array([angle-ang[0],angle-ang[1],angle-ang[2]])))
                     angrelated0 = self.limit(angle - ang[ang_c], -0.785, 0.785)
-                    angrelated1 = self.limit(angle - calangle([obj_kps[0], obj_kps[1]]), -0.785, 0.785)
-                    angrelated2 = self.limit(calangle([obj_kps[2], obj_kps[3]]) - angle, -0.785, 0.785)
+                    angrelated1 = self.limit(angle - calangle(calangle_([obj_kps[0], obj_kps[1]])), -0.785, 0.785)
+                    angrelated2 = self.limit(calangle(calangle_([obj_kps[2], obj_kps[3]])) - angle, -0.785, 0.785)
                     y11_np[x_ind,y_ind] = 1
                     y12_np[x_ind,y_ind,ang_c] = 1
                     y13_np[x_ind,y_ind] = [lrelated0,lrelated1,lrelated2,angrelated0,angrelated1,angrelated2]
@@ -135,12 +135,12 @@ class Dataloader(Datapath):
                     x_related = (obj_kps[1][1] - int(x_ind * 8)) / 8
                     y_related = (obj_kps[1][0] - int(y_ind * 8)) / 8
                     # 角度
-                    angle = calangle([obj_kps[1], obj_kps[2]])
+                    angle = calangle(calangle_([obj_kps[1], obj_kps[2]]))
                     ang = self.config['angle']
                     ang_c = np.argmin(np.abs(np.array([angle - ang[0], angle - ang[1], angle - ang[2]])))
                     angrelated0 = self.limit(angle - ang[ang_c],-0.785,0.785)
-                    angrelated1 = self.limit(angle - calangle([obj_kps[0], obj_kps[1]]), -0.785,0.785)
-                    angrelated2 = self.limit(calangle([obj_kps[2], obj_kps[3]]) - angle, -0.785,0.785)
+                    angrelated1 = self.limit(angle - calangle(calangle_([obj_kps[0], obj_kps[1]])), -0.785,0.785)
+                    angrelated2 = self.limit(calangle(calangle_([obj_kps[2], obj_kps[3]])) - angle, -0.785,0.785)
                     y21_np[x_ind, y_ind] = 1
                     y22_np[x_ind, y_ind, ang_c] = 1
                     y23_np[x_ind, y_ind] = [lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2]
