@@ -94,14 +94,15 @@ class Dataloader(Datapath):
         for i,path in enumerate(imgpathlist):
             img = self.getimage(imgpathlist,i)
             keypoints = self.getlabel(labelpathlist,i)
-            n_img,n_keypoints = self.enhenced(img,keypoints)
-            img_input.append(torch.from_numpy(img.transpose([2,0,1])).unsqueeze(0))
+            # n_img,n_keypoints = self.enhenced(img,keypoints)
+            n_img,n_keypoints = img,keypoints
+            img_input.append(torch.from_numpy(n_img.transpose([2,0,1])).unsqueeze(0))
             y11_np,y12_np,y13_np,y14_np=np.zeros([20,30]),np.zeros([20,30,3]),np.zeros([20,30,6]),np.zeros([20,30,2])
             y21_np, y22_np, y23_np, y24_np = np.zeros([40, 60]),np.zeros([40, 60,3]),np.zeros([40, 60,6]),np.zeros([40, 60,2])
             heapmap_np = np.zeros([160,240,5])
             for j,obj_kps in enumerate(n_keypoints):
                 long = callength([obj_kps[1],obj_kps[2]])
-                print(obj_kps)
+                # print('第',j,obj_kps)
                 if long>l_cut:
                     x_ind,y_ind = int(obj_kps[1][1] / self.h * 20),int(obj_kps[1][0] / self.w * 30)
                     # 长度
@@ -122,7 +123,7 @@ class Dataloader(Datapath):
                     y12_np[x_ind,y_ind,ang_c] = 1
                     y13_np[x_ind,y_ind] = [lrelated0,lrelated1,lrelated2,angrelated0,angrelated1,angrelated2]
                     y14_np[x_ind,y_ind] = [x_related,y_related]
-                    print(x_ind,y_ind,ang_c,x_related, y_related,lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
+                    # print(1,x_ind,y_ind,ang_c,x_related, y_related,'\n',lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
 
                 else:
                     x_ind, y_ind = int(obj_kps[1][1] / self.h * 40), int(obj_kps[1][0] / self.w * 60)
@@ -144,7 +145,7 @@ class Dataloader(Datapath):
                     y22_np[x_ind, y_ind, ang_c] = 1
                     y23_np[x_ind, y_ind] = [lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2]
                     y24_np[x_ind, y_ind] = [x_related, y_related]
-                    print(x_ind,y_ind,ang_c,x_related, y_related,lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
+                    # print(2,x_ind,y_ind,ang_c,x_related, y_related,'\n',lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
                 for k,point in enumerate(obj_kps):
                     heapmap_np[int(point[1]/2)-1:int(point[1]/2)+2,int(point[0]/2)-1:int(point[0]/2)+2,k+1]=1
             y11_tensor = torch.from_numpy(y11_np).unsqueeze(0).unsqueeze(0)

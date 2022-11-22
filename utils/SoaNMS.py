@@ -17,12 +17,22 @@ class Detres(): # detect result
                 res_thre.append(obj.unsqueeze(0))
                 self.index.append(i)
         # 排序
-        res_temp = torch.cat(res_thre,0)
-        res_thre,index = res_temp.sort(0,True) # True 为从大到小
-        ind_temp = []
-        for i in index:
-            ind_temp.append(self.index[i[0]])
-        self.index = ind_temp
+        res_thre = torch.cat(res_thre,0)
+        index = torch.linspace(0,len(res_thre)-1,len(res_thre))
+        i = 0
+        while i < len(res_thre)-1:
+            j = i + 1
+            while j < len(res_thre):
+                if res_thre[i][0] < res_thre[j][0]:
+                    temp = res_thre[i]
+                    res_thre[i] = res_thre[j]
+                    res_thre[j] = temp
+                    temp = index[i].clone()
+                    index[i] = index[j]
+                    index[j] = temp
+                j += 1
+            i += 1
+        self.index = index
         res_tensor = []
         i = 0
         while i < len(res_thre)-1:
@@ -48,13 +58,13 @@ class Detres(): # detect result
         cal_xy = lambda x:(cal_x(x),cal_y(x))  # 跟据角度和长度计算坐标
         cal_length = lambda x:np.sqrt((x[1][1] - x[0][1])**2 + (x[1][0] - x[0][0])**2)
         cal_sigma = lambda x: 0 if x < T else 1
-        (x1_2,y1_2) = (int(x1[2]),int(x1[1]))
+        (x1_2,y1_2) = (int(x1[1]),int(x1[2]))
         (x1_1,y1_1) = cal_xy([x1_2,y1_2,x1[4]-np.pi,x1[7]])
         (x1_3, y1_3) = cal_xy([x1_2, y1_2, x1[3], x1[6]])
         (x1_4, y1_4) = cal_xy([x1_3, y1_3, x1[5], x1[8]])
         keypoint1 = [(x1_1,y1_1),(x1_2,y1_2),(x1_3, y1_3),(x1_4, y1_4)]
         long1 = torch.sum(x1[6:])
-        (x2_2, y2_2) = (int(x2[2]), int(x2[1]))
+        (x2_2, y2_2) = (int(x2[1]), int(x2[2]))
         (x2_1, y2_1) = cal_xy([x2_2, y2_2, x2[4] - np.pi, x2[7]])
         (x2_3, y2_3) = cal_xy([x2_2, y2_2, x2[3], x2[6]])
         (x2_4, y2_4) = cal_xy([x2_3, y2_3, x2[5], x2[8]])
