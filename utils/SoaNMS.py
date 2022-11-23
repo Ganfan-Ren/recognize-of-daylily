@@ -3,6 +3,7 @@ import numpy as np
 
 class Detres(): # detect result
     def __init__(self,res_al,config,threshold):
+        self.device = res_al[0].device
         self.res_al = res_al[0]
         self.heaepmap = res_al[1]
         self.config = config
@@ -10,8 +11,8 @@ class Detres(): # detect result
         self.index = []
         self.isNMS = False
 
-    def NMS(self,SOAthreshold=0.5):
-        res_thre = [torch.zeros([0,11]),torch.zeros([0,11]),torch.zeros([0,11])]
+    def NMS(self,SOAthreshold=0.5): # 针对所有类别
+        res_thre = [torch.zeros([0,11]).to(self.device),torch.zeros([0,11]).to(self.device),torch.zeros([0,11]).to(self.device)]
         for i,obj in enumerate(self.res_al):
             if obj[0] >= self.threshold:
                 res_thre[int(obj[-2])] = torch.cat([res_thre[int(obj[-2])],obj.view(1,11)],0)
@@ -25,7 +26,7 @@ class Detres(): # detect result
         self.res_al = res_thre
         return res_thre
 
-    def Nms(self,res_thre,SOAthreshold):
+    def Nms(self,res_thre,SOAthreshold): # 只针对一个类别
         temp, index = torch.sort(res_thre, 0)
         for i, ind in enumerate(index[:, 0]):
             temp[i] = res_thre[ind]
@@ -50,13 +51,13 @@ class Detres(): # detect result
         cal_xy = lambda x:(cal_x(x),cal_y(x))  # 跟据角度和长度计算坐标
         cal_length = lambda x:np.sqrt((x[1][1] - x[0][1])**2 + (x[1][0] - x[0][0])**2)
         cal_sigma = lambda x: 0 if x < T else 1
-        (x1_2,y1_2) = (int(x1[1]),int(x1[2]))
+        (x1_2,y1_2) = (int(x1[2]),int(x1[1]))
         (x1_1,y1_1) = cal_xy([x1_2,y1_2,x1[4]-np.pi,x1[7]])
         (x1_3, y1_3) = cal_xy([x1_2, y1_2, x1[3], x1[6]])
         (x1_4, y1_4) = cal_xy([x1_3, y1_3, x1[5], x1[8]])
         keypoint1 = [(x1_1,y1_1),(x1_2,y1_2),(x1_3, y1_3),(x1_4, y1_4)]
         long1 = torch.sum(x1[6:])
-        (x2_2, y2_2) = (int(x2[1]), int(x2[2]))
+        (x2_2, y2_2) = (int(x2[2]), int(x2[1]))
         (x2_1, y2_1) = cal_xy([x2_2, y2_2, x2[4] - np.pi, x2[7]])
         (x2_3, y2_3) = cal_xy([x2_2, y2_2, x2[3], x2[6]])
         (x2_4, y2_4) = cal_xy([x2_3, y2_3, x2[5], x2[8]])

@@ -4,4 +4,4 @@ weight
 test.py
 __pycache__
 .gitignore
-path.yaml
+config/path.yaml

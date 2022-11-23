@@ -11,7 +11,7 @@ class File():
             info = f.read()
         picinfo = info.split('\n\n')
 
-        name = picinfo[0].split(' ')[0]
+        self.name = picinfo[0].split(' ')[0]
         self.imageh = int(picinfo[0].split(' ')[1])
         self.imagew = int(picinfo[0].split(' ')[2])
 
@@ -92,3 +92,9 @@ class File():
                 pp.append([x,y])
             dic[ind] = pp
         return dic
+
+    def get_imgsize(self):
+        try:
+            return [self.h,self.w]
+        except:
+            raise UserWarning("请先读取文件")
