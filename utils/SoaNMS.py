@@ -98,10 +98,10 @@ class Detres(): # detect result
 
     def heap_init(self,radius):
         self.heapmap = F.upsample(self.heapmap,size=self.config['size_img'],mode='nearest')
-        heap_d1,index1 = F.max_pool2d_with_indices(self.heapmap,(8,8),(8,8))
-        heap_d2,index2 = F.max_pool2d_with_indices(heap_d1,(4,4),(4,4))
-        self.heapmap = F.max_unpool2d(heap_d2,index2,(4,4),(4,4))
-        self.heapmap = F.max_unpool2d(self.heapmap,index1,(8,8),(8,8))
+        heap_d1,index1 = F.max_pool2d_with_indices(self.heapmap,(16,16),(16,16))
+        heap_d2,index2 = F.max_pool2d_with_indices(heap_d1,(2,2),(2,2))
+        self.heapmap = F.max_unpool2d(heap_d2,index2,(2,2),(2,2))
+        self.heapmap = F.max_unpool2d(self.heapmap,index1,(16,16),(16,16))
         self.heapmap = torch.where(self.heapmap>self.threshold,1,0)
 
     def heap_fix(self,radius):
@@ -112,9 +112,9 @@ class Detres(): # detect result
         keypoints = self.getkeypoint()
         delete_list = []
         num_ = [1,2,3,0]
-        flush_index = []
+
         for i,obj_kp in enumerate(keypoints):
-            wait = False
+            flush_index = []
             for j in num_:
                 p = obj_kp[j]
                 n_point,isflush = self.find_nearestpoint(p,j+1,radius)
@@ -152,7 +152,7 @@ class Detres(): # detect result
         return new_point,flush_sign
 
     def vis_heapmap(self,radius):
-        self.heap_init(radius)
+        # self.heap_init(radius)
         heap_map = self.heapmap[0,1:,:,:]
         image = heap_map[0,:,:]*50 + heap_map[1,:,:]* 100 + heap_map[2,:,:] * 150 + heap_map[3,:,:]*250
         max_ = float(torch.max(image))

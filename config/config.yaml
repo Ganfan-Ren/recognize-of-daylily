@@ -1,6 +1,6 @@
 batch_size: 4
 path: config\path.yaml
-weight_path: weight/Dheap_weight1.pt
+weight_path: weight/Dheap_weight.pt
 lr: 0.1
 epoch: 500
 optimizer: SGD

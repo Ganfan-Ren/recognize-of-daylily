@@ -19,7 +19,7 @@ def detect(net,img,config,threshold):
         det = net(inp)
         res_al = tensor_objabsvalue(det,config) # al are angle and length
         detecter = Detres(res_al,config,threshold)
-        keypoint = detecter.heap_fix(8)
+        keypoint = detecter.heap_fix(24)
     keypoint = np.array(keypoint)
     if len(keypoint) == 0:
         return keypoint
@@ -172,7 +172,7 @@ def testmain():
 
     net = DayHeap()
     config=setconfig()
-    imgpath = r'D:\dataset\image\IMGdaylily_00174.jpg'
+    imgpath = r'D:\dataset\image\IMGdaylily_00173.jpg'
     if not os.path.exists(imgpath):
         raise FileExistsError('not found ' + imgpath)
     img = cv2.imread(imgpath)
@@ -190,7 +190,7 @@ def testmain():
         det = net(inp)
         res_al = tensor_objabsvalue(det, config)  # al are angle and length
         detecter = Detres(res_al, config, 0.3)
-        keypoints = detecter.getkeypoint()
+        keypoints = detecter.heap_fix(24)
         image = detecter.vis_heapmap(8)
 
     img_1 = np.zeros_like(img)
