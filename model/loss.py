@@ -40,7 +40,7 @@ class Loss(nn.Module):
         self.focal_loss = Focal_Loss([1,1,1]) # 角度类别
         self.bce = BCELoss([0.9,0.1]) # 置信度
         self.mse = nn.MSELoss()
-        self.focal_loss1 = Focal_Loss([0.01,0.98,0.98,0.98,0.98])
+        self.focal_loss1 = Focal_Loss([0.01,0.9,0.99,0.9,0.9])
     def forward(self,det,label):
         y1,y2,y3 = det
         device = y3.device
@@ -56,7 +56,7 @@ class Loss(nn.Module):
         center_loss = self.mse(y1[3] * l1[0],l1[3]) + self.mse(y2[3] * l2[0],l2[3])
         heap_loss = self.focal_loss1(y3,l3)
         loss = [confidobj_loss,cls_loss,angleandlength_loss,center_loss,heap_loss]
-        weights = [0.5,30,10,30,1]
+        weights = [1,30,20,50,50]
         loss_total = torch.Tensor([0]).to(device)
         for i in range(5):
             loss_total = loss_total + weights[i] * loss[i]

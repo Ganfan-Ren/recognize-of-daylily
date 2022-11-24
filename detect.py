@@ -3,6 +3,8 @@ import cv2
 import yaml
 import numpy as np
 from model import DayHeap
+import os
+import argparse
 from utils import Detres,Dataloader
 
 def detect(net,img,config,threshold):
@@ -17,7 +19,7 @@ def detect(net,img,config,threshold):
         det = net(inp)
         res_al = tensor_objabsvalue(det,config) # al are angle and length
         detecter = Detres(res_al,config,threshold)
-        keypoint = detecter.getkeypoint()
+        keypoint = detecter.heap_fix(8)
     keypoint = np.array(keypoint)
     if len(keypoint) == 0:
         return keypoint
@@ -90,43 +92,112 @@ def tensor_objabsvalue(det,config): # 将输出转换为[2400+600,9]
     y = torch.cat([y,index],1)
     return y,heapmap
 
+def parse_opt(known=False):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weight_path', type=str, default='none', help='initial weights path')
+    parser.add_argument('--SOA', type=float, default=-1.0, help='NMS parameter')
+    parser.add_argument('--T', type=float, default=-1.0, help='location precision parameter')
+    parser.add_argument('--epsilon', type=float, default=-1.0, help='accuracy parameter')
+    return parser.parse_known_args()[0] if known else parser.parse_args()
+
+def setconfig():
+    opt = parse_opt(True)
+    with open('config/config.yaml','r') as f:
+        config = yaml.load(f,yaml.FullLoader)
+    for key,value in vars(opt).items():
+        if isinstance(value,str):
+            if value != 'none':
+                config[key] = value
+        elif isinstance(value,float):
+            if value >= 0:
+                config[key] = value
+    return config
+
 def vis_keypoints(image, keypoints, color, diameter=3):
     image = image.copy()
     for obj in keypoints:
         lastpoint = ()
+        # ------------------一起画-----------------
         for i, (x, y) in enumerate(obj):
             cv2.circle(image, (int(x), int(y)), diameter, color[i], -1)
             if len(lastpoint) > 0:
                 cv2.line(image,lastpoint,(x,y),(0,0,255),diameter)
             lastpoint = (x,y)
-    image = cv2.resize(image, [960, 640])
+        # ---------------先画点，再画线-------------------
+        # for i, (x, y) in enumerate(obj):
+        #     cv2.circle(image, (int(x), int(y)), diameter, color[i], -1)
+        # for i, (x, y) in enumerate(obj):
+        #     if len(lastpoint) > 0:
+        #         cv2.line(image, lastpoint, (x, y), (0, 0, 255), diameter)
+        #     lastpoint = (x, y)
+        # ----------------end--------------------------
+    d = np.argmax(image.shape)
+    size = [960,int(image.shape[1]/image.shape[0]*960)] if d == 0 else [int(1500 * image.shape[0]/image.shape[1]),1500]
+    image = cv2.resize(image, [size[1],size[0]])
     cv2.imshow('img', image)
     cv2.waitKey(0)
 
+
+
 def main():
     net = DayHeap()
-    with open('config/config.yaml','r') as f:
-        config = yaml.load(f,yaml.FullLoader)
-    imgpath = r'D:\dataset\image\IMGdaylily_00000.jpg'
+    config = setconfig()
+    imgpath = r'D:\dataset\image\IMGdaylily_00100.jpg'
+    if not os.path.exists(imgpath):
+        raise FileExistsError('not found ' + imgpath)
     img = cv2.imread(imgpath)
     t = torch.load(config['weight_path'])
     net.load_state_dict(t)
     res = detect(net,img,config,0.3)
     KEYPOINT_COLOR = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]  # B G R
-    print(res)
+    # print(res)
     vis_keypoints(img,res,KEYPOINT_COLOR,9)
 
 
 def testmain():
-    loader = Dataloader()
-    loader.batch_size = 1
-    x,y = loader[0]
-    img = x.squeeze().numpy().transpose([1,2,0]) / 255
-    res_al = tensor_objabsvalue(y, loader.config)  # al are angle and length
-    detecter = Detres(res_al, loader.config, 0.3)
-    keypoint = detecter.getkeypoint()
+    # loader = Dataloader()
+    # loader.batch_size = 1
+    # x,y = loader[0]
+    # img = x.squeeze().numpy().transpose([1,2,0]) / 255
+    # res_al = tensor_objabsvalue(y, loader.config)  # al are angle and length
+    # detecter = Detres(res_al, loader.config, 0.3)
+    # keypoint = detecter.getkeypoint()
+    # image = detecter.vis_heapmap(8)
+    # img_1 = np.zeros_like(img)
+    # for i in range(3):
+    #     img_1[:,:,i] = image
+    # img = np.concatenate((img,img_1),1)
+    # KEYPOINT_COLOR = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]  # B G R
+    # vis_keypoints(img,keypoint,KEYPOINT_COLOR,1)
+
+    net = DayHeap()
+    config=setconfig()
+    imgpath = r'D:\dataset\image\IMGdaylily_00174.jpg'
+    if not os.path.exists(imgpath):
+        raise FileExistsError('not found ' + imgpath)
+    img = cv2.imread(imgpath)
+    t = torch.load(config['weight_path'])
+    net.load_state_dict(t)
     KEYPOINT_COLOR = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]  # B G R
-    vis_keypoints(img,keypoint,KEYPOINT_COLOR,1)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    img_size = img.shape
+    size = config['size_img']
+    img = cv2.resize(img, [size[1], size[0]])
+    with torch.no_grad():
+        inp = torch.from_numpy(img.transpose([2, 0, 1])).unsqueeze(0).type(torch.float)
+        net = net.to(device)
+        inp = inp.to(device)
+        det = net(inp)
+        res_al = tensor_objabsvalue(det, config)  # al are angle and length
+        detecter = Detres(res_al, config, 0.3)
+        keypoints = detecter.getkeypoint()
+        image = detecter.vis_heapmap(8)
+
+    img_1 = np.zeros_like(img)
+    for i in range(3):
+        img_1[:,:,i] = np.uint8(image * 255)
+    img = np.concatenate((img,img_1),1)
+    vis_keypoints(img, keypoints, KEYPOINT_COLOR, 1)
 
 if __name__ == '__main__':
-    main()
+    testmain()

@@ -1,5 +1,6 @@
 import yaml
 import os
+import argparse
 import logging
 from utils import Dataloader
 import torch
@@ -84,15 +85,35 @@ def train(net,device_,config):
         # 验证集精度
         pass
 
+def parse_opt(known=False):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weight_path', type=str, default='none', help='initial weights path')
+    parser.add_argument('--batch_size', type=int, default=-1, help='batchsize')
+    parser.add_argument('--path', type=str, default='none', help='dataset path file with yaml')
+    parser.add_argument('--lr', type=float, default=-1.0, help='learning rate')
+    parser.add_argument('--epoch', type=int, default=-1, help='train epoch')
+    parser.add_argument('--momentum', type=float, default=-1.0, help='momentum')
+    parser.add_argument('--optimizer', type=str, default='SGD', help='optimizer')
+    return parser.parse_known_args()[0] if known else parser.parse_args()
 
+def setconfig():
+    opt = parse_opt(True)
+    with open('config/config.yaml','r') as f:
+        config = yaml.load(f,yaml.FullLoader)
+    for key,value in vars(opt).items():
+        if isinstance(value,str):
+            if value != 'none':
+                config[key] = value
+        elif isinstance(value,float) or isinstance(value,int):
+            if value >= 0:
+                config[key] = value
+    return config
 
 
 def main():
     model = DayHeap()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    config_path = 'config/config.yaml'
-    with open(config_path,'r') as f:
-        config = yaml.load(f,yaml.FullLoader)
+    config = setconfig()
     logger.info('开始训练：' + config['weight_path'])
     train(model,device,config)
     logger.info('已完成训练：'+config['weight_path'])

@@ -148,6 +148,7 @@ class Dataloader(Datapath):
                     # print(2,x_ind,y_ind,ang_c,x_related, y_related,'\n',lrelated0, lrelated1, lrelated2, angrelated0, angrelated1, angrelated2)
                 for k,point in enumerate(obj_kps):
                     heapmap_np[int(point[1]/2)-1:int(point[1]/2)+2,int(point[0]/2)-1:int(point[0]/2)+2,k+1]=1
+
             y11_tensor = torch.from_numpy(y11_np).unsqueeze(0).unsqueeze(0)
             y12_tensor, y13_tensor, y14_tensor = torch.from_numpy(y12_np.transpose([2, 0, 1])).unsqueeze(0), \
                                                  torch.from_numpy(y13_np.transpose([2, 0, 1])).unsqueeze(0), \
@@ -165,7 +166,8 @@ class Dataloader(Datapath):
             y23.append(y23_tensor.to(torch.float))
             y24.append(y24_tensor.to(torch.float))
             heapmap_dim0 = 1 - np.sum(heapmap_np,2)
-            heapmap_np[:,:,0] = np.where(heapmap_dim0<0,0,1) * heapmap_dim0
+            heapmap_np[:,:,0] = np.where(heapmap_dim0<=0,0,1) * heapmap_dim0
+
             # heapmap_np = cv2.GaussianBlur(heapmap_np,(3,3),15)
             heapmap_tensor = torch.from_numpy(heapmap_np.transpose([2,0,1])).unsqueeze(0)
             heapmap.append(heapmap_tensor)
